@@ -1,4 +1,5 @@
 import os
+import sys
 import cv2
 import yaml
 import json
@@ -75,9 +76,10 @@ class TwitterClient:
 
 if __name__=='__main__':
     '''
-    config/api.yml にコンシューマーキーを記載
+    config/api.yml にコンシューマーキーを記載してください
 
-    python -m twitterclient user_id
+    excution)
+    python -m twitterclient hinata_980115
     '''
     def display_timeline(timelines):
         for line in timelines:
@@ -103,7 +105,11 @@ if __name__=='__main__':
         for item in lists['lists']:
             print(item['name'])
 
+    args = sys.argv
+
     twitter_client = TwitterClient(display_lists)
+
+    # 実行したい動作以外をコメントアウト。要修正
     # twitter_client.get_timeline(take_images)
-    # twitter_client.get_user_timeline('hinata_980115', count=100)
-    twitter_client.get_user_list('hinata_980115')
+    # twitter_client.get_user_timeline(args[1], count=100)
+    twitter_client.get_user_list(args[1])
