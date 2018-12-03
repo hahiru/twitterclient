@@ -1,0 +1,4 @@
+opencv-python == 3.4.1.15
+requests
+requests_oauthlib
+urllib3
