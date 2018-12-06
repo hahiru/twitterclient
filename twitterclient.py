@@ -4,6 +4,7 @@ import cv2
 import yaml
 import json
 from requests_oauthlib import OAuth1Session
+from typing import Optional
 import urllib
 
 BASE_URL = "https://api.twitter.com/"
@@ -21,7 +22,7 @@ class TwitterClient:
             config['CONSUMER_KEY'], config['CONSUMER_SECRET'], config['ACCESS_TOKEN'], config['ACCESS_TOKEN_SECRET'])
         self._func = func
 
-    def get_timeline(self, count: int = 5) -> None:
+    def get_timeline(self, count: Optional[int] = 5) -> None:
         '''
         自身のタイムラインを取得します。
 
@@ -31,13 +32,9 @@ class TwitterClient:
         url = os.path.join(BASE_URL, '1.1/statuses/user_timeline.json')
         res = self._client.get(url, params=params)
 
-        if res.status_code == 200:
-            timelines = json.loads(res.text)
-            self._func(timelines)
-        else:
-            print("Failed: %d" % res.status_code)
+        self._response_processor(res)
 
-    def get_user_timeline(self, screen_name: str, count: int = 5) -> None:
+    def get_user_timeline(self, screen_name: str, count: Optional[int] = 5) -> None:
         '''
         特定ユーザのタイムラインを取得します。
 
@@ -48,11 +45,7 @@ class TwitterClient:
         url = os.path.join(BASE_URL, '1.1/statuses/user_timeline.json')
         res = self._client.get(url, params=params)
 
-        if res.status_code == 200:
-            timelines = json.loads(res.text)
-            self._func(timelines)
-        else:
-            print("Failed: %d" % res.status_code)
+        self._response_processor(res)
 
     def get_user_list(self, screen_name: str) -> None:
         '''
@@ -62,9 +55,22 @@ class TwitterClient:
         url = os.path.join(BASE_URL, '1.1/lists/memberships.json')
         res = self._client.get(url, params=params)
 
+        self._response_processor(res)
+
+    def search(self, screen_name: str, count: Optional[int] = 5, until: Optional[str] = None) -> None:
+        query = 'from:' + screen_name + ' until:' + until
+        query = urllib.parse.quote(query)
+        print(query)
+        params = {'q': query, 'count': count, 'result_type': 'mixed'}
+        url = os.path.join(BASE_URL, '1.1/search/tweets.json')
+        res = self._client.get(url, params=params)
+
+        self._response_processor(res)
+
+    def _response_processor(self, res) -> None:
         if res.status_code == 200:
-            timelines = json.loads(res.text)
-            self._func(timelines)
+            result = json.loads(res.text)
+            self._func(result)
         else:
             print("Failed: %d" % res.status_code)
 
@@ -105,11 +111,18 @@ if __name__=='__main__':
         for item in lists['lists']:
             print(item['name'])
 
+    def search_parser(response):
+        for item in response['statuses']:
+            print('created_at: ', item['created_at'])
+            print('text: ', item['text'])
+            print('name: {}, screenname: {}'.format(item['user']['name'], item['user']['screen_name']))
+
     args = sys.argv
 
-    twitter_client = TwitterClient(display_lists)
+    twitter_client = TwitterClient(search_parser)
 
     # 実行したい動作以外をコメントアウト。要修正
     # twitter_client.get_timeline(take_images)
     # twitter_client.get_user_timeline(args[1], count=100)
-    twitter_client.get_user_list(args[1])
+    # twitter_client.get_user_list(args[1])
+    twitter_client.search(args[1])
